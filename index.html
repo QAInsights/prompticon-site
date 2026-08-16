@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompticon - Quick replies for your favorite AI chats</title>
+<meta name="description" content="Prompticon is a Chrome extension that floats a customizable quick-reply toolbar above the composer in ChatGPT, Claude, Gemini, Grok and more.">
+<link rel="icon" type="image/png" href="assets/icon-48.png">
+<link rel="apple-touch-icon" href="assets/icon-128.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d1310">
+<!-- TODO: switch og:url and og:image to absolute URLs once the site is deployed -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Prompticon">
+<meta property="og:title" content="Prompticon - Quick replies for your favorite AI chats">
+<meta property="og:description" content="A customizable quick-reply toolbar that floats above the composer in ChatGPT, Claude, Gemini, Grok and more. 100% client-side, zero tracking, MIT licensed.">
+<meta property="og:image" content="assets/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prompticon - Quick replies for your favorite AI chats">
+<meta name="twitter:description" content="A customizable quick-reply toolbar that floats above the composer in ChatGPT, Claude, Gemini, Grok and more. 100% client-side, zero tracking, MIT licensed.">
+<meta name="twitter:image" content="assets/og-image.png">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "Prompticon",
+      "softwareVersion": "1.3.0",
+      "applicationCategory": "BrowserExtension",
+      "operatingSystem": "Any OS running Chrome or a Chromium-based browser",
+      "browserRequirements": "Requires a Manifest V3 browser such as Chrome, Edge or Chromium",
+      "description": "Prompticon is a free, open-source Chrome extension that adds a customizable quick-reply toolbar above the composer in ChatGPT, Claude, Gemini, Grok, Mistral Le Chat, Qwen Chat, Meta AI and DeepSeek.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": { "@type": "Organization", "name": "QAInsights", "url": "https://qainsights.com" },
+      "codeRepository": "https://github.com/QAInsights/prompticon",
+      "license": "https://opensource.org/license/mit",
+      "featureList": [
+        "Floating, draggable quick-reply toolbar with per-site position memory",
+        "Eight editable reply profiles: General, Developer, Writer, Student, Support, Recruiter, Sales, Quiz",
+        "Fill-for-review or send-on-click behavior",
+        "Long-press variants for expanded follow-ups",
+        "Template variables such as {{topic}} and {{audience}}",
+        "Keyboard shortcuts Alt+1..9 and Alt+P command palette",
+        "Opt-in, local-only smart question detection",
+        "100% client-side with zero tracking and a single storage permission"
+      ]
+    },
+    {
+      "@type": "Organization",
+      "name": "QAInsights",
+      "url": "https://qainsights.com",
+      "sameAs": ["https://github.com/QAInsights"]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What does Prompticon cost?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Nothing. Prompticon is free and open source under the MIT license." }
+        },
+        {
+          "@type": "Question",
+          "name": "Which AI chats does Prompticon support?",
+          "acceptedAnswer": { "@type": "Answer", "text": "ChatGPT, Claude, Gemini, Grok, Mistral Le Chat, Qwen Chat, Meta AI and DeepSeek, plus most other web chat interfaces via intelligent fallback detection." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Prompticon track me or send data anywhere?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. It is 100% client-side with no analytics, no trackers and no network calls. The only permission it requests is storage." }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I customize the quick replies?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Eight curated profiles are fully editable, you can add your own replies, use template variables and long-press variants, and choose which websites show the toolbar." }
+        },
+        {
+          "@type": "Question",
+          "name": "What are the keyboard shortcuts?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Alt+1 through Alt+9 inserts your first nine replies. Alt+P opens a searchable command palette." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does clicking a reply send it immediately?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Only if you enable send-on-click. The default fills the composer so you can review before sending." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Space+Grotesk:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d1310;
+    --panel: #131a15;
+    --panel-2: #1a231c;
+    --hair: #2a352c;
+    --hair-2: #3a473c;
+    --text: #eef2e7;
+    --dim: #9aab9b;
+    --lime: #b8ff7d;
+    --lime-2: #95f54e;
+    --green: #35c065;
+    --font-display: "Bricolage Grotesque", "Arial Black", sans-serif;
+    --font-body: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: var(--font-body);
+    background: var(--ink); color: var(--text);
+    line-height: 1.6; -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; height: auto; display: block; }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; border-radius: 4px; }
+  .mono { font-family: var(--font-mono); }
+  .wrap { max-width: 1180px; margin-inline: auto; padding-inline: clamp(1.25rem, 4vw, 2.5rem); }
+
+  /* Top bar */
+  .top { border-bottom: 1px solid var(--hair); }
+  .top .wrap { display: flex; align-items: center; justify-content: space-between; padding-block: .9rem; }
+  .brand { display: flex; align-items: center; gap: .65rem; text-decoration: none; }
+  .brand img { border-radius: 9px; }
+  .brand b { font: 800 1.05rem var(--font-display); letter-spacing: .02em; text-transform: uppercase; }
+  .brand .ver { font: 500 .68rem var(--font-mono); color: var(--ink); background: var(--lime); border-radius: 999px; padding: .18rem .55rem; letter-spacing: .05em; }
+  .btn {
+    display: inline-flex; align-items: center; gap: .55rem;
+    font: 700 .92rem var(--font-body); letter-spacing: .02em;
+    padding: .85rem 1.5rem; border-radius: 2px; text-decoration: none;
+    transition: transform .15s cubic-bezier(.2,.7,.2,1), box-shadow .15s;
+  }
+  .btn-lime { background: var(--lime); color: #142c17; }
+  .btn-lime:hover { transform: translate(-2px, -2px); box-shadow: 3px 3px 0 var(--green); }
+  .btn-ghost { color: var(--text); border: 1px solid var(--hair-2); }
+  .btn-ghost:hover { border-color: var(--lime); color: var(--lime); transform: translateY(-2px); }
+  .top-actions { display: flex; align-items: center; gap: .8rem; }
+  .more-menu { position: relative; }
+  .menu-btn {
+    font: 500 .72rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
+    color: var(--dim); background: none; border: 1px solid var(--hair-2); border-radius: 2px;
+    padding: .6rem .9rem; cursor: pointer; transition: color .15s, border-color .15s;
+  }
+  .menu-btn:hover { color: var(--lime); border-color: var(--lime); }
+  .menu-panel {
+    position: absolute; right: 0; top: calc(100% + .6rem); z-index: 20;
+    width: min(320px, 90vw); background: var(--panel); border: 1px solid var(--hair-2);
+    display: grid; box-shadow: 0 18px 44px -20px rgb(0 0 0 / .7);
+  }
+  .menu-panel[hidden] { display: none; }
+  .menu-panel a { display: grid; gap: .15rem; padding: .7rem .95rem; text-decoration: none; border-bottom: 1px solid var(--hair); }
+  .menu-panel a:last-child { border-bottom: 0; }
+  .menu-panel a:hover { background: var(--panel-2); }
+  .menu-panel b { font: 700 .85rem var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+  .menu-panel a:hover b { color: var(--lime); }
+  .menu-panel span { font: 400 .68rem var(--font-mono); color: var(--dim); }
+
+  /* Meta strip */
+  .meta { border-bottom: 1px solid var(--hair); background: var(--panel); }
+  .meta .wrap {
+    display: flex; flex-wrap: wrap; gap: .4rem 2.2rem; justify-content: space-between;
+    padding-block: .6rem;
+    font: 500 .68rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--dim);
+  }
+  .meta b { color: var(--lime); font-weight: 500; }
+
+  /* Masthead */
+  .masthead { position: relative; border-bottom: 1px solid var(--hair); }
+  .masthead .spark {
+    position: absolute; right: -4%; bottom: -10%; width: min(36vw, 420px);
+    color: var(--lime); opacity: .08; pointer-events: none;
+  }
+  .masthead .wrap {
+    display: grid; grid-template-columns: 3fr 2fr;
+    gap: clamp(2rem, 5vw, 5rem); align-items: end;
+    padding-block: clamp(3rem, 7vw, 5.5rem);
+  }
+  .kicker { font: 500 .74rem var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--green); margin-bottom: 1.6rem; }
+  h1 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(2.6rem, 7vw, 5.6rem);
+    line-height: 1; letter-spacing: -.02em; text-transform: uppercase;
+    margin-bottom: 1.8rem;
+  }
+  h1 .chip-inline {
+    display: inline-flex; align-items: center; gap: .4em;
+    font-size: .4em; font-weight: 700; text-transform: none; letter-spacing: 0;
+    background: var(--panel-2); border: 1px solid var(--hair-2);
+    border-radius: 999px; padding: .28em .9em;
+    vertical-align: middle; transform: translateY(-.35em) rotate(-2deg);
+  }
+  h1 .lime { color: var(--lime); }
+  .mast-sub { max-width: 34em; color: var(--dim); font-size: clamp(1rem, 1.4vw, 1.15rem); margin-bottom: 2.2rem; }
+  .mast-sub b { color: var(--text); }
+  .cta-row { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+  .spec { border-top: 2px solid var(--lime); align-self: end; }
+  .spec div {
+    display: grid; grid-template-columns: 11ch 1fr; gap: 1rem;
+    padding-block: .55rem; border-bottom: 1px solid var(--hair);
+    font-size: .88rem;
+  }
+  .spec dt { font: 500 .68rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); padding-top: .2em; }
+  .spec dd b { color: var(--lime); font-weight: 600; }
+
+  /* Marquee */
+  .marquee { border-bottom: 1px solid var(--hair); background: var(--panel); overflow: hidden; padding-block: .9rem; }
+  .marquee-track { display: flex; width: max-content; }
+  .marquee-group { display: flex; gap: .6rem; padding-right: .6rem; }
+  .m-chip {
+    white-space: nowrap; font: 700 .85rem var(--font-body);
+    background: var(--panel-2); border: 1px solid var(--hair);
+    border-radius: 999px; padding: .5rem 1rem;
+  }
+  .m-chip.hot { background: var(--lime); border-color: var(--lime); color: #142c17; }
+  @media (prefers-reduced-motion: no-preference) {
+    .marquee-track { animation: marquee 36s linear infinite; }
+    .marquee:hover .marquee-track { animation-play-state: paused; }
+    @keyframes marquee { to { transform: translateX(-50%); } }
+  }
+
+  /* TOC */
+  .toc { border-bottom: 1px solid var(--hair); }
+  .toc .wrap { display: flex; flex-wrap: wrap; gap: .4rem 2.2rem; padding-block: .8rem; }
+  .toc a { font: 500 .7rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; text-decoration: none; color: var(--dim); }
+  .toc a:hover { color: var(--lime); }
+  .toc a b { color: var(--green); font-weight: 500; margin-right: .5em; }
+
+  /* Sections */
+  section { border-bottom: 1px solid var(--hair); }
+  section > .wrap { padding-block: clamp(3rem, 7vw, 5.5rem); }
+  .sec-title {
+    display: flex; align-items: baseline; gap: 1rem;
+    font: 500 .74rem var(--font-mono); letter-spacing: .16em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 2.2rem;
+  }
+  .sec-title b { color: var(--lime); font-weight: 500; }
+  .sec-title::after { content: ""; flex: 1; border-top: 1px solid var(--hair); transform: translateY(-4px); }
+  h2 { font: 800 clamp(1.6rem, 3.6vw, 2.6rem) var(--font-display); text-transform: uppercase; letter-spacing: -.01em; line-height: 1.05; }
+
+  /* Capability index */
+  .caps { border-top: 2px solid var(--lime); }
+  .cap {
+    display: grid; grid-template-columns: 7ch 1fr 2fr; gap: clamp(1rem, 3vw, 2.5rem);
+    padding-block: 1.1rem; border-bottom: 1px solid var(--hair);
+    transition: background .15s;
+  }
+  .cap:hover { background: var(--panel); }
+  .cap .idx { font: 500 .78rem var(--font-mono); color: var(--green); padding-top: .35em; transition: color .15s; }
+  .cap:hover .idx { color: var(--lime); }
+  .cap h3 { font: 700 1.05rem var(--font-display); text-transform: uppercase; letter-spacing: .01em; }
+  .cap p { font-size: .9rem; color: var(--dim); }
+  .cap p b { color: var(--text); font-weight: 500; }
+
+  /* Shortcuts */
+  .keys-grid { display: grid; grid-template-columns: 2fr 1fr; gap: clamp(2rem, 5vw, 4rem); align-items: start; }
+  .keys-row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-bottom: 1.4rem; }
+  kbd {
+    font: 700 .95rem var(--font-body); color: var(--text);
+    background: var(--panel-2); border: 1px solid var(--hair-2); border-bottom-width: 3px;
+    border-radius: 8px; padding: .5rem .8rem; min-width: 2.6rem; text-align: center;
+    transition: transform .12s, border-color .12s;
+  }
+  .keys-row kbd:hover { transform: translateY(2px); border-bottom-width: 1px; border-color: var(--lime); }
+  kbd.alt { background: var(--lime); color: #142c17; border-color: var(--lime-2); }
+  .plus { color: var(--dim); font-weight: 700; }
+  .keys-note { color: var(--dim); max-width: 40em; font-size: .95rem; }
+  .keys-note b { color: var(--lime); font-weight: 600; }
+  .palette-card {
+    border: 1px solid var(--hair-2); background: var(--panel);
+    padding: 1.2rem; display: grid; gap: .6rem;
+  }
+  .palette-card .ph {
+    font: 400 .8rem var(--font-mono); color: var(--dim);
+    border: 1px solid var(--green); border-radius: 6px; padding: .55rem .8rem;
+  }
+  .palette-card .hit { font: 400 .8rem var(--font-mono); color: var(--text); background: color-mix(in oklab, var(--lime) 14%, transparent); border-radius: 6px; padding: .45rem .8rem; }
+  .palette-card .row { font: 400 .8rem var(--font-mono); color: var(--dim); padding: .45rem .8rem; }
+  .palette-card .head { display: flex; justify-content: space-between; font: 500 .68rem var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .palette-card .head b { color: var(--lime); font-weight: 500; }
+
+  /* Platforms */
+  .plats { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--lime); border-left: 1px solid var(--hair); }
+  .plat { border-right: 1px solid var(--hair); border-bottom: 1px solid var(--hair); padding: 1rem 1.1rem; transition: background .15s; }
+  .plat:hover { background: var(--panel); }
+  .plat b { display: block; font: 700 .98rem var(--font-display); text-transform: uppercase; letter-spacing: .02em; }
+  .plat:hover b { color: var(--lime); }
+  .plat span { font: 400 .7rem var(--font-mono); color: var(--dim); }
+  .plat-note { margin-top: 1rem; font: 400 .74rem var(--font-mono); color: var(--dim); }
+
+  /* More extensions */
+  .more { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 2px solid var(--lime); border-left: 1px solid var(--hair); }
+  .more-cell {
+    display: grid; gap: .5rem; align-content: start;
+    padding: 1.2rem 1.2rem 1.4rem;
+    border-right: 1px solid var(--hair); border-bottom: 1px solid var(--hair);
+    text-decoration: none; transition: background .15s;
+  }
+  .more-cell:hover { background: var(--panel); }
+  .more-cell b { font: 700 1rem var(--font-display); text-transform: uppercase; letter-spacing: .02em; transition: color .15s; }
+  .more-cell:hover b { color: var(--lime); }
+  .more-cell span { font-size: .85rem; color: var(--dim); }
+  .more-cell .go { font: 500 .68rem var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--green); transition: color .15s; }
+  .more-cell:hover .go { color: var(--lime); }
+
+  /* FAQ */
+  .faq { display: grid; grid-template-columns: 1fr 1fr; column-gap: clamp(2rem, 4vw, 4rem); border-top: 2px solid var(--lime); }
+  .faq-item { border-bottom: 1px solid var(--hair); padding-block: 1.1rem; }
+  .faq h3 { font: 500 .78rem var(--font-mono); letter-spacing: .06em; color: var(--lime); margin-bottom: .45rem; }
+  .faq p { font-size: .9rem; color: var(--dim); }
+  .faq p b { color: var(--text); font-weight: 500; }
+
+  /* Gallery */
+  .figs { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.5rem, 3vw, 2.5rem); }
+  .figs figure { border: 1px solid var(--hair-2); padding: .8rem; background: var(--panel); transition: border-color .15s; }
+  .figs figure:hover { border-color: var(--lime); }
+  .figs img { border: 1px solid var(--hair); }
+  .figs figcaption {
+    display: flex; gap: .8rem; margin-top: .7rem;
+    font: 400 .7rem var(--font-mono); letter-spacing: .04em; color: var(--dim);
+  }
+  .figs figcaption b { color: var(--lime); font-weight: 500; }
+  .figs .fig-btn { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+  .figs .fig-btn img { transition: transform .2s cubic-bezier(.2,.7,.2,1); }
+  .figs .fig-btn:hover img { transform: scale(1.015); }
+  .sec-title .hint { color: var(--dim); }
+
+  /* Lightbox */
+  dialog#lightbox {
+    border: 1px solid var(--hair-2); background: var(--panel); color: var(--text);
+    padding: clamp(.8rem, 2vw, 1.4rem);
+    width: fit-content; height: fit-content;
+    max-width: min(1240px, 94vw); max-height: 92vh;
+    inset: 0; margin: auto; overflow: hidden;
+  }
+  dialog#lightbox[open] { display: grid; gap: .9rem; justify-items: start; }
+  dialog#lightbox::backdrop { background: rgb(5 9 6 / .85); }
+  dialog#lightbox img {
+    max-width: calc(min(1240px, 94vw) - 4rem);
+    max-height: calc(92vh - 6.5rem);
+    width: auto; height: auto; border: 1px solid var(--hair);
+  }
+  dialog#lightbox p { font: 400 .78rem var(--font-mono); color: var(--dim); letter-spacing: .04em; }
+  .lb-close {
+    position: absolute; top: .7rem; right: .7rem; z-index: 1;
+    font: 700 .9rem var(--font-body); color: var(--text);
+    background: var(--panel-2); border: 1px solid var(--hair-2); border-radius: 8px;
+    width: 2.2rem; height: 2.2rem; cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+  .lb-close:hover { border-color: var(--lime); color: var(--lime); }
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes lb-in { from { opacity: 0; transform: scale(.96); } }
+    @keyframes lb-fade { from { opacity: 0; } }
+    dialog#lightbox[open] { animation: lb-in .25s cubic-bezier(.2,.7,.2,1); }
+    dialog#lightbox[open]::backdrop { animation: lb-fade .25s linear; }
+  }
+
+  /* Privacy */
+  .privacy { background: var(--lime); color: #142c17; border-bottom: 0; }
+  .privacy-grid { display: grid; grid-template-columns: 3fr 2fr; gap: clamp(2rem, 5vw, 5rem); align-items: center; }
+  .privacy h2 { font-size: clamp(2rem, 5.5vw, 4.2rem); margin-bottom: 1.2rem; }
+  .privacy p { font-size: clamp(.98rem, 1.4vw, 1.15rem); font-weight: 500; color: #274b2c; max-width: 36em; }
+  .privacy p b { color: #142c17; }
+  .checks { border: 2px solid #142c17; }
+  .checks li {
+    list-style: none; display: flex; gap: .9rem; align-items: baseline;
+    padding: .75rem 1.1rem; border-bottom: 1px solid color-mix(in oklab, #142c17 35%, transparent);
+    font: 400 .78rem var(--font-mono);
+  }
+  .checks li:last-child { border-bottom: 0; }
+  .checks .box { font-weight: 500; }
+
+  footer .wrap {
+    display: flex; flex-wrap: wrap; gap: .6rem 2.5rem; justify-content: space-between;
+    padding-block: 1.5rem;
+    font: 400 .68rem var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--dim);
+  }
+  footer a { text-decoration: none; }
+  footer a:hover { color: var(--lime); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes rise { from { opacity: 0; transform: translateY(24px); } }
+    .masthead .wrap > * { animation: rise .7s cubic-bezier(.2,.7,.2,1) backwards; }
+    .masthead .wrap > :nth-child(2) { animation-delay: .12s; }
+    @supports ((animation-timeline: view()) and (animation-range: entry)) {
+      .reveal { animation: rise auto linear backwards; animation-timeline: view(); animation-range: entry 0% entry 55%; }
+    }
+  }
+
+  @media (max-width: 900px) {
+    .masthead .wrap, .keys-grid, .privacy-grid { grid-template-columns: 1fr; }
+    .plats { grid-template-columns: 1fr 1fr; }
+    .more { grid-template-columns: 1fr 1fr; }
+    .faq { grid-template-columns: 1fr; }
+    .figs { grid-template-columns: 1fr; }
+    .cap { grid-template-columns: 6ch 1fr; }
+    .cap p { grid-column: 2; }
+  }
+  @media (max-width: 620px) {
+    .more { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#">
+      <img src="assets/icon-48.png" alt="" width="30" height="30">
+      <b>Prompticon</b>
+      <span class="ver">v1.3.0</span>
+    </a>
+    <div class="top-actions">
+      <a class="menu-btn" href="https://github.com/QAInsights/prompticon" target="_blank" rel="noopener">GitHub</a>
+      <div class="more-menu">
+        <button type="button" class="menu-btn" id="moreBtn" aria-haspopup="true" aria-expanded="false" aria-controls="moreMenu">More ▾</button>
+        <nav class="menu-panel" id="moreMenu" hidden aria-label="More extensions from QAInsights">
+          <a href="https://chromewebstore.google.com/detail/confetti-celebrations/jlnaaichmlfhooionenmhdnimhdmoijb" target="_blank" rel="noopener"><b>Confetti Celebrations</b><span>Confetti on any page</span></a>
+          <a href="https://chromewebstore.google.com/detail/clip-it/dmacanhpegjjgmicfbinaafcnjaigecf" target="_blank" rel="noopener"><b>Clip It!</b><span>Bulk coupon clipping</span></a>
+          <a href="https://chromewebstore.google.com/detail/quick-links/jcpngbilapanldphljagkbkjkmkmeiii" target="_blank" rel="noopener"><b>Quick Links</b><span>Kanban bookmarks + todos</span></a>
+          <a href="https://chromewebstore.google.com/detail/salesforce-turbo-link/nfdefnkljkgcafhicidcdhdkffblpiml" target="_blank" rel="noopener"><b>Salesforce Turbo Link</b><span>Fast Salesforce pages</span></a>
+          <a href="https://chromewebstore.google.com/detail/dashbuster/pnfhimkhinoecknjhlggdbgoajcogfll" target="_blank" rel="noopener"><b>DashBuster</b><span>Replace em dashes anywhere</span></a>
+          <a href="https://chromewebstore.google.com/detail/metahide/hodomjpjmaifjigbaobgabhpgkhifpib" target="_blank" rel="noopener"><b>MetaHide</b><span>Tidy the meta.ai sidebar</span></a>
+        </nav>
+      </div>
+      <!-- TODO: replace # with the Chrome Web Store listing URL -->
+      <a class="btn btn-lime" href="#">Add to Chrome</a>
+    </div>
+  </div>
+</header>
+
+<div class="meta">
+  <div class="wrap">
+    <span><b>Product sheet</b> / Chrome extension, MV3</span>
+    <span>Rev <b>1.3.0</b></span>
+    <span>License <b>MIT</b> © QAInsights</span>
+  </div>
+</div>
+
+<main>
+  <section class="masthead">
+    <svg class="spark" viewBox="0 0 190 240" aria-hidden="true">
+      <path d="M 95 0 Q 95 108 190 120 Q 95 132 95 240 Q 95 132 0 120 Q 95 108 95 0 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    <div class="wrap">
+      <div>
+        <p class="kicker">Quick replies for AI chats</p>
+        <h1>Never type <span class="chip-inline">➡️ Continue</span> again<span class="lime">.</span></h1>
+        <p class="mast-sub">A floating toolbar of your best replies above the composer in <b>ChatGPT, Claude, Gemini, Grok</b> and six more AI chats. Click it, hold it, or hit <b>Alt+1</b>. The answers you repeat, reduced to one click.</p>
+        <div class="cta-row">
+          <a class="btn btn-lime" href="#">Add to Chrome, free</a>
+          <a class="btn btn-ghost" href="#caps">Read the capability index</a>
+        </div>
+      </div>
+      <dl class="spec">
+        <div><dt>Product</dt><dd>Prompticon</dd></div>
+        <div><dt>Type</dt><dd>Chrome extension, Manifest V3</dd></div>
+        <div><dt>Permission</dt><dd><b>storage</b>, and nothing else</dd></div>
+        <div><dt>Network</dt><dd><b>Zero calls.</b> 100% client-side</dd></div>
+        <div><dt>Profiles</dt><dd>8 curated packs, fully editable</dd></div>
+        <div><dt>Shortcuts</dt><dd>Alt+1..9 insert, Alt+P palette</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <div class="marquee-group">
+        <span class="m-chip">👍 Yes</span><span class="m-chip">👎 No</span><span class="m-chip hot">➡️ Continue</span><span class="m-chip">📄 More detail</span><span class="m-chip">✂️ Shorter</span><span class="m-chip">🙏 Thanks</span><span class="m-chip">✨ Polish</span><span class="m-chip">💡 Expand</span><span class="m-chip">🎯 Persuasive</span><span class="m-chip">📘 ELI5</span><span class="m-chip">🧠 Teach me</span><span class="m-chip">❓ Quiz me</span><span class="m-chip">🗂️ Flashcards</span><span class="m-chip">📅 Study plan</span><span class="m-chip">🔍 Examples</span><span class="m-chip">📚 Sources</span>
+      </div>
+      <div class="marquee-group">
+        <span class="m-chip">👍 Yes</span><span class="m-chip">👎 No</span><span class="m-chip hot">➡️ Continue</span><span class="m-chip">📄 More detail</span><span class="m-chip">✂️ Shorter</span><span class="m-chip">🙏 Thanks</span><span class="m-chip">✨ Polish</span><span class="m-chip">💡 Expand</span><span class="m-chip">🎯 Persuasive</span><span class="m-chip">📘 ELI5</span><span class="m-chip">🧠 Teach me</span><span class="m-chip">❓ Quiz me</span><span class="m-chip">🗂️ Flashcards</span><span class="m-chip">📅 Study plan</span><span class="m-chip">🔍 Examples</span><span class="m-chip">📚 Sources</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="toc" aria-label="Sections">
+    <div class="wrap">
+      <a href="#caps"><b>01</b>Capabilities</a>
+      <a href="#keys"><b>02</b>Shortcuts</a>
+      <a href="#platforms"><b>03</b>Platforms</a>
+      <a href="#gallery"><b>04</b>Gallery</a>
+      <a href="#more"><b>05</b>More</a>
+      <a href="#faq"><b>06</b>FAQ</a>
+      <a href="#privacy"><b>07</b>Privacy</a>
+    </div>
+  </nav>
+
+  <section id="caps">
+    <div class="wrap">
+      <p class="sec-title reveal"><b>01</b> Capability index</p>
+      <div class="caps">
+        <div class="cap reveal"><span class="idx">C-01</span><h3>Floating toolbar</h3><p>Draggable, collapsible, with per-site position memory and a one-click reset to the composer.</p></div>
+        <div class="cap reveal"><span class="idx">C-02</span><h3>Reply profiles</h3><p>General, Developer, Writer, Student, Support, Recruiter, Sales and Quiz packs. Every reply editable, deletable, addable.</p></div>
+        <div class="cap reveal"><span class="idx">C-03</span><h3>Click behavior</h3><p>Fill the composer for review (default) or send immediately. Your choice, one toggle.</p></div>
+        <div class="cap reveal"><span class="idx">C-04</span><h3>Long-press variants</h3><p>Hold a chip to insert its expanded follow-up: hold <b>Yes</b> for "Yes, but explain why."</p></div>
+        <div class="cap reveal"><span class="idx">C-05</span><h3>Template variables</h3><p>Replies like "Explain {{topic}} for {{audience}}" prompt for values, then compose the finished prompt.</p></div>
+        <div class="cap reveal"><span class="idx">C-06</span><h3>Keyboard control</h3><p>Alt+1..9 fires the first nine replies. Alt+P opens a searchable command palette with arrow-key selection.</p></div>
+        <div class="cap reveal"><span class="idx">C-07</span><h3>Smart detection</h3><p>Opt-in, local-only. Surfaces Yes/No, True/False and A-E answer chips from the latest AI response.</p></div>
+        <div class="cap reveal"><span class="idx">C-08</span><h3>Site visibility</h3><p>Show the toolbar everywhere, or choose exactly which supported websites get it.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="keys">
+    <div class="wrap">
+      <p class="sec-title reveal"><b>02</b> Hands never leave the keys</p>
+      <div class="keys-grid">
+        <div class="reveal">
+          <div class="keys-row" role="group" aria-label="Keyboard shortcuts: Alt plus 1 through 9 insert your first nine replies">
+            <kbd class="alt">Alt</kbd><span class="plus">+</span>
+            <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd><kbd>7</kbd><kbd>8</kbd><kbd>9</kbd>
+          </div>
+          <div class="keys-row" role="group" aria-label="Keyboard shortcut: Alt plus P opens the command palette">
+            <kbd class="alt">Alt</kbd><span class="plus">+</span><kbd>P</kbd>
+          </div>
+          <p class="keys-note"><b>Alt+1..9</b> inserts your first nine replies. <b>Alt+P</b> opens the command palette: search every saved reply by emoji, label or text, arrow to it, Enter to fire.</p>
+        </div>
+        <div class="palette-card reveal" role="img" aria-label="Command palette preview: searching teach highlights the Teach me reply">
+          <p class="head"><span>Search replies</span><b>Alt+P</b></p>
+          <p class="ph">teach</p>
+          <p class="hit">🧠 Teach me</p>
+          <p class="row">❓ Quiz me</p>
+          <p class="row">🗂️ Flashcards</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="platforms">
+    <div class="wrap">
+      <p class="sec-title reveal"><b>03</b> Supported platforms</p>
+      <div class="plats reveal">
+        <div class="plat"><b>ChatGPT</b><span>chatgpt.com</span></div>
+        <div class="plat"><b>Claude</b><span>claude.ai</span></div>
+        <div class="plat"><b>Gemini</b><span>gemini.google.com</span></div>
+        <div class="plat"><b>Grok</b><span>grok.com</span></div>
+        <div class="plat"><b>Mistral</b><span>chat.mistral.ai</span></div>
+        <div class="plat"><b>Qwen</b><span>chat.qwen.ai</span></div>
+        <div class="plat"><b>Meta AI</b><span>meta.ai</span></div>
+        <div class="plat"><b>DeepSeek</b><span>chat.deepseek.com</span></div>
+      </div>
+      <p class="plat-note reveal">+ most other web chat interfaces via intelligent fallback detection.</p>
+    </div>
+  </section>
+
+  <section id="gallery">
+    <div class="wrap">
+      <p class="sec-title reveal"><b>04</b> Gallery <span class="hint">/ click to enlarge</span></p>
+      <div class="figs">
+        <figure class="reveal">
+          <button type="button" class="fig-btn" data-caption="Fig. 01 - General pack above the ChatGPT composer.">
+            <img src="assets/2026-08-16_13-14-25.png" width="1280" height="800" alt="Prompticon toolbar with Yes, No, Continue, More detail, Shorter and Thanks chips above the ChatGPT composer" loading="lazy">
+          </button>
+          <figcaption><b>Fig. 01</b> General pack above the ChatGPT composer.</figcaption>
+        </figure>
+        <figure class="reveal">
+          <button type="button" class="fig-btn" data-caption="Fig. 02 - Smart detection, A-E chips on a Gemini quiz.">
+            <img src="assets/2026-08-16_13-21-01.png" width="1280" height="800" alt="Smart question detection offering A to E answer chips under a quiz question in Gemini" loading="lazy">
+          </button>
+          <figcaption><b>Fig. 02</b> Smart detection, A-E chips on a Gemini quiz.</figcaption>
+        </figure>
+        <figure class="reveal">
+          <button type="button" class="fig-btn" data-caption="Fig. 03 - Template variables collecting {{topic}} before send.">
+            <img src="assets/2026-08-16_13-24-09.png" width="1280" height="800" alt="Writer profile toolbar and the Complete ELI5 template variable dialog asking for a topic value" loading="lazy">
+          </button>
+          <figcaption><b>Fig. 03</b> Template variables collecting {{topic}} before send.</figcaption>
+        </figure>
+        <figure class="reveal">
+          <button type="button" class="fig-btn" data-caption="Fig. 04 - Popup, settings and the Alt+P palette.">
+            <img src="assets/2026-08-16_13-28-24.png" width="1400" height="560" alt="Prompticon popup with the Student profile, the settings panel and the searchable reply palette" loading="lazy">
+          </button>
+          <figcaption><b>Fig. 04</b> Popup, settings and the Alt+P palette.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="more">
+    <div class="wrap">
+      <p class="sec-title reveal"><b>05</b> More from QAInsights</p>
+      <div class="more reveal">
+        <a class="more-cell" href="https://chromewebstore.google.com/detail/confetti-celebrations/jlnaaichmlfhooionenmhdnimhdmoijb" target="_blank" rel="noopener">
+          <b>Confetti Celebrations</b>
+          <span>Celebrates any moment with customizable confetti on the current page.</span>
+          <span class="go">View on the Chrome Web Store</span>
+        </a>
+        <a class="more-cell" href="https://chromewebstore.google.com/detail/clip-it/dmacanhpegjjgmicfbinaafcnjaigecf" target="_blank" rel="noopener">
+          <b>Clip It!</b>
+          <span>Clips multiple Kroger and subsidiary coupons at once to maximize savings.</span>
+          <span class="go">View on the Chrome Web Store</span>
+        </a>
+        <a class="more-cell" href="https://chromewebstore.google.com/detail/quick-links/jcpngbilapanldphljagkbkjkmkmeiii" target="_blank" rel="noopener">
+          <b>Quick Links</b>
+          <span>Kanban-style bookmark management with integrated todo support.</span>
+          <span class="go">View on the Chrome Web Store</span>
+        </a>
+        <a class="more-cell" href="https://chromewebstore.google.com/detail/salesforce-turbo-link/nfdefnkljkgcafhicidcdhdkffblpiml" target="_blank" rel="noopener">
+          <b>Salesforce Turbo Link</b>
+          <span>Launches Salesforce pages quickly from the toolbar.</span>
+          <span class="go">View on the Chrome Web Store</span>
+        </a>
+        <a class="more-cell" href="https://chromewebstore.google.com/detail/dashbuster/pnfhimkhinoecknjhlggdbgoajcogfll" target="_blank" rel="noopener">
+          <b>DashBuster</b>
+          <span>Replaces em dashes on any website with a character of your choice.</span>
+          <span class="go">View on the Chrome Web Store</span>
+        </a>
+        <a class="more-cell" href="https://chromewebstore.google.com/detail/metahide/hodomjpjmaifjigbaobgabhpgkhifpib" target="_blank" rel="noopener">
+          <b>MetaHide</b>
+          <span>Toggles the visibility of meta.ai sidebar menu items.</span>
+          <span class="go">View on the Chrome Web Store</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <p class="sec-title reveal"><b>06</b> FAQ</p>
+      <div class="faq">
+        <div class="faq-item reveal">
+          <h3>What does Prompticon cost?</h3>
+          <p>Nothing. Prompticon is <b>free and open source</b> under the MIT license.</p>
+        </div>
+        <div class="faq-item reveal">
+          <h3>Which AI chats does it support?</h3>
+          <p>ChatGPT, Claude, Gemini, Grok, Mistral Le Chat, Qwen Chat, Meta AI and DeepSeek, plus most other web chats via <b>intelligent fallback detection</b>.</p>
+        </div>
+        <div class="faq-item reveal">
+          <h3>Does it track me or send data anywhere?</h3>
+          <p>No. It is <b>100% client-side</b> with no analytics, no trackers and no network calls. The only permission it requests is storage.</p>
+        </div>
+        <div class="faq-item reveal">
+          <h3>Can I customize the quick replies?</h3>
+          <p>Yes. Eight curated profiles are <b>fully editable</b>, you can add your own replies, use template variables and long-press variants, and choose which websites show the toolbar.</p>
+        </div>
+        <div class="faq-item reveal">
+          <h3>What are the keyboard shortcuts?</h3>
+          <p><b>Alt+1..9</b> inserts your first nine replies. <b>Alt+P</b> opens a searchable command palette.</p>
+        </div>
+        <div class="faq-item reveal">
+          <h3>Does clicking a reply send it immediately?</h3>
+          <p>Only if you enable <b>send-on-click</b>. The default fills the composer so you can review before sending.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy" class="privacy">
+    <div class="wrap">
+      <div class="privacy-grid">
+        <div class="reveal">
+          <h2>Zero tracking. Zero network calls.</h2>
+          <p>Prompticon is <b>100% client-side</b>. Your replies and settings never leave chrome.storage on your own machine. The only permission is storage, and the license is MIT.</p>
+        </div>
+        <ul class="checks reveal">
+          <li><span class="box">[x]</span> No analytics, no trackers</li>
+          <li><span class="box">[x]</span> No network calls</li>
+          <li><span class="box">[x]</span> Single permission: storage</li>
+          <li><span class="box">[x]</span> Settings stay in chrome.storage</li>
+          <li><span class="box">[x]</span> Smart detection opt-in, local-only</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Prompticon / MIT © QAInsights</span>
+    <span><a href="https://qainsights.com" target="_blank" rel="noopener">qainsights.com</a> / <a href="https://ai.dosa.dev" target="_blank" rel="noopener">ai.dosa.dev</a></span>
+  </div>
+</footer>
+
+<dialog id="lightbox" aria-label="Screenshot viewer">
+  <button type="button" class="lb-close" id="lbClose" aria-label="Close screenshot viewer">✕</button>
+  <img id="lbImg" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="">
+  <p id="lbCap"></p>
+</dialog>
+
+<script>
+  (function () {
+    var dialog = document.getElementById('lightbox');
+    var lbImg = document.getElementById('lbImg');
+    var lbCap = document.getElementById('lbCap');
+    document.querySelectorAll('.fig-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var img = btn.querySelector('img');
+        lbImg.src = img.src;
+        lbImg.alt = img.alt;
+        lbCap.textContent = btn.getAttribute('data-caption');
+        dialog.showModal();
+      });
+    });
+    dialog.addEventListener('click', function (e) {
+      if (e.target === dialog) dialog.close();
+    });
+    document.getElementById('lbClose').addEventListener('click', function () {
+      dialog.close();
+    });
+
+    var moreBtn = document.getElementById('moreBtn');
+    var moreMenu = document.getElementById('moreMenu');
+    function setMenu(open) {
+      moreMenu.hidden = !open;
+      moreBtn.setAttribute('aria-expanded', String(open));
+    }
+    moreBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      setMenu(moreMenu.hidden);
+    });
+    document.addEventListener('click', function (e) {
+      if (!moreMenu.hidden && !moreMenu.contains(e.target)) setMenu(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !moreMenu.hidden) {
+        setMenu(false);
+        moreBtn.focus();
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>
