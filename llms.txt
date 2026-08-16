@@ -17,7 +17,7 @@ Prompticon is developed by QAInsights (https://qainsights.com).
 
 ## Links
 
-- [Product page](index.html): one-page product sheet with capability index, platforms, gallery and FAQ
+- [Product page](https://dosa.dev/prompticon/): one-page product sheet with capability index, platforms, gallery and FAQ
 - [Source code](https://github.com/QAInsights/prompticon): MIT-licensed repository
 - [QAInsights](https://qainsights.com): the developer's website
 - [Confetti Celebrations](https://chromewebstore.google.com/detail/confetti-celebrations/jlnaaichmlfhooionenmhdnimhdmoijb): customizable confetti on any page
