@@ -1,0 +1,15 @@
+{
+  "name": "Prompticon",
+  "short_name": "Prompticon",
+  "description": "Customizable quick-reply toolbar for ChatGPT, Claude, Gemini, Grok, Mistral, Qwen, Meta AI and DeepSeek.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "browser",
+  "background_color": "#0d1310",
+  "theme_color": "#0d1310",
+  "icons": [
+    { "src": "assets/icon-48.png", "sizes": "48x48", "type": "image/png" },
+    { "src": "assets/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "assets/prompticon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
