@@ -17,6 +17,7 @@ Prompticon is developed by QAInsights (https://qainsights.com).
 
 ## Links
 
+- [Chrome Web Store](https://chromewebstore.google.com/detail/prompticon/niofgdlmoogjllonnpdhmajdginmcnke): install Prompticon
 - [Product page](https://dosa.dev/prompticon/): one-page product sheet with capability index, platforms, gallery and FAQ
 - [Source code](https://github.com/QAInsights/prompticon): MIT-licensed repository
 - [QAInsights](https://qainsights.com): the developer's website
