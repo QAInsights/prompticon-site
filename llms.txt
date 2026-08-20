@@ -1,6 +1,6 @@
 # Prompticon
 
-> Prompticon is a free, open-source (MIT) Chrome extension that adds a customizable quick-reply toolbar above the composer in ChatGPT, Claude, Gemini, Grok, Mistral Le Chat, Qwen Chat, Meta AI and DeepSeek. It is 100% client-side: no analytics, no trackers, no network calls, and a single storage permission.
+> Prompticon is a free, open-source (MIT) Chrome and Firefox extension that adds a customizable quick-reply toolbar above the composer in ChatGPT, Claude, Gemini, Grok, Mistral Le Chat, Qwen Chat, Meta AI and DeepSeek. It is 100% client-side: no analytics, no trackers, no network calls, and a single storage permission.
 
 Prompticon is developed by QAInsights (https://qainsights.com).
 
@@ -9,7 +9,7 @@ Prompticon is developed by QAInsights (https://qainsights.com).
 - Version: 1.3.0
 - Price: free
 - License: MIT
-- Type: Chrome extension, Manifest V3
+- Type: Chrome + Firefox extension, Manifest V3
 - Permission: storage only
 - Shortcuts: Alt+1..9 insert the first nine replies, Alt+P opens the command palette
 - Profiles: General, Developer, Writer, Student, Support, Recruiter, Sales, Quiz (all editable)
@@ -17,7 +17,8 @@ Prompticon is developed by QAInsights (https://qainsights.com).
 
 ## Links
 
-- [Chrome Web Store](https://chromewebstore.google.com/detail/prompticon/niofgdlmoogjllonnpdhmajdginmcnke): install Prompticon
+- [Chrome Web Store](https://chromewebstore.google.com/detail/prompticon/niofgdlmoogjllonnpdhmajdginmcnke): install Prompticon on Chrome, Edge and other Chromium browsers
+- [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/prompticon/): install Prompticon on Firefox
 - [Product page](https://dosa.dev/prompticon/): one-page product sheet with capability index, platforms, gallery and FAQ
 - [Source code](https://github.com/QAInsights/prompticon): MIT-licensed repository
 - [QAInsights](https://qainsights.com): the developer's website
